@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- systray.qdoc -->
+  <title>Task Scheduler example | QDoc Project</title>
+</head>
+<body>
+<li>Task Scheduler example</li>
+<div class="sidebar">
+<div class="toc">
+<h3><a name="toc">Contents</a></h3>
+<ul>
+<li class="level1"><a href="#window-class-definition">Window Class Definition</a></li>
+<li class="level1"><a href="#window-class-implementation">Window Class Implementation</a></li>
+</ul>
+</div>
+<div class="sidebar-content" id="sidebar-content"></div></div>
+<h1 class="title">Task Scheduler example</h1>
+<span class="subtitle"></span>
+<!-- $$$-description -->
+<div class="descr"> <a name="details"></a>
+<p class="figCaption">The application executes two task in series. The first task shows a message every 10 seconds and the second task checks every 30 seconds if a file exists or not; if not, then the application shows a warning message.</p>
+<p class="centerAlign"><img src="images/systemtray-example.png" alt="" /></p><p class="figCaption">Screenshot of the Systray icon displayed</p>
+<p>The single class <code>MainWindow</code> allows the configuration of task1 and task2. The <b>Named msg</b> field is the message that task1 periodically shows. The <b>Named file</b> field is the file that task2 will search. The <b>Browse</b> button allows the user to specify the folder where to search for the file. The <b>Launch scheduler</b> button allows to start both task1 and task2 with their scheduled timing.</p>
+<p class="centerAlign"><img src="images/systemtray-editor.png" alt="" /></p><p class="figCaption">Screenshot of the Systray control panel</p>
+<p>It is possible to stop both tasks closing the panel; the main application continues to run in hide mode. An information message about this is displayed.</p>
+<p class="centerAlign"><img src="images/systemtray-stop-tasks.png" alt="" /></p><p>The <b>Open control panel</b> action restores the Panel control. The user can choose other actions through the systray icon menu. So, it is possible to stop task1 or task2 through the relative <b>Stop task1</b> and <b>Stop task2</b> actions. The <b>Quit</b> action allows to close the application.</p>
+<p class="centerAlign"><img src="images/systemtray-menu.png" alt="" /></p><a name="window-class-definition"></a>
+<h2 id="window-class-definition">Window Class Definition</h2>
+<p>The <code>MainWindow</code> class inherits QWidget:</p>
+<pre class="cpp"><span class="keyword">class</span> MainWindow : <span class="keyword">public</span> <span class="type">QWidget</span>
+{
+  Q_OBJECT
+
+<span class="keyword">public</span>:
+  MainWindow(<span class="type">QWidget</span> <span class="operator">*</span>parent <span class="operator">=</span> <span class="number">0</span>);
+  <span class="operator">~</span>MainWindow();
+
+<span class="keyword">protected</span>:
+  <span class="type">void</span> closeEvent(<span class="type">QCloseEvent</span> <span class="operator">*</span>event) override;
+
+<span class="keyword">public</span> <span class="keyword">slots</span>:
+  <span class="type">void</span> launchScheduler();
+
+<span class="keyword">private</span> <span class="keyword">slots</span>:
+  <span class="type">void</span> iconActivated(<span class="type">QSystemTrayIcon</span><span class="operator">::</span>ActivationReason);
+  <span class="type">void</span> showMessage();
+  <span class="type">void</span> browse();
+  <span class="type">void</span> find();
+
+<span class="keyword">private</span>:
+  <span class="type">void</span> showFiles(<span class="keyword">const</span> <span class="type">QStringList</span> <span class="operator">&amp;</span>paths);
+  <span class="type">QComboBox</span> <span class="operator">*</span>createComboBox(<span class="keyword">const</span> <span class="type">QString</span> <span class="operator">&amp;</span>text <span class="operator">=</span> <span class="type">QString</span>());
+  <span class="type">void</span> stopTimer1();
+  <span class="type">void</span> stopTimer2();
+
+  <span class="type">QTimer</span> <span class="operator">*</span>timer1;
+  <span class="type">QTimer</span> <span class="operator">*</span>timer2;
+  <span class="type">QSystemTrayIcon</span><span class="operator">*</span> trayIcon;
+  <span class="type">QMenu</span><span class="operator">*</span> trayIconMenu;
+
+  <span class="type">QMenu</span><span class="operator">*</span> createMenu();
+
+  <span class="type">QComboBox</span> <span class="operator">*</span>msgComboBox;
+  <span class="type">QComboBox</span> <span class="operator">*</span>fileComboBox;
+  <span class="type">QComboBox</span> <span class="operator">*</span>directoryComboBox;
+  <span class="type">QLabel</span> <span class="operator">*</span>filesFoundLabel;
+
+  <span class="type">QDir</span> currentDir;
+};</pre>
+<p>Several private slots are implented to respond to user interaction through the menu of the systray and the control panel buttons. Furthermore timer1 and timer2 allow to execute the two tasks periodically.</p>
+<a name="window-class-implementation"></a>
+<h2 id="window-class-implementation">Window Class Implementation</h2>
+<p>- The main application section is here reported:</p>
+<pre class="cpp">MainWindow<span class="operator">::</span>MainWindow(<span class="type">QWidget</span> <span class="operator">*</span>parent)
+  : <span class="type">QWidget</span>(parent)
+  <span class="operator">,</span> trayIcon(<span class="keyword">new</span> <span class="type">QSystemTrayIcon</span>(<span class="keyword">this</span>))
+{
+  <span class="comment">// Tray icon menu</span>
+  <span class="keyword">auto</span> menu <span class="operator">=</span> <span class="keyword">this</span><span class="operator">-</span><span class="operator">&gt;</span>createMenu();
+  <span class="keyword">this</span><span class="operator">-</span><span class="operator">&gt;</span>trayIcon<span class="operator">-</span><span class="operator">&gt;</span>setContextMenu(menu);
+
+  <span class="comment">// App icon</span>
+  <span class="keyword">auto</span> appIcon <span class="operator">=</span> <span class="type">QIcon</span>(<span class="string">&quot;:/icons/server.png&quot;</span>);
+  <span class="keyword">this</span><span class="operator">-</span><span class="operator">&gt;</span>trayIcon<span class="operator">-</span><span class="operator">&gt;</span>setIcon(appIcon);
+  <span class="keyword">this</span><span class="operator">-</span><span class="operator">&gt;</span>setWindowIcon(appIcon);
+
+  <span class="comment">// Timers</span>
+  timer1 <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QTimer</span>(<span class="keyword">this</span>);
+  timer2 <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QTimer</span>(<span class="keyword">this</span>);
+
+  <span class="comment">// Displaying the tray icon</span>
+  <span class="keyword">this</span><span class="operator">-</span><span class="operator">&gt;</span>trayIcon<span class="operator">-</span><span class="operator">&gt;</span>show();
+
+  <span class="comment">// Interaction</span>
+  connect(trayIcon<span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QSystemTrayIcon</span><span class="operator">::</span>activated<span class="operator">,</span> <span class="keyword">this</span><span class="operator">,</span> <span class="operator">&amp;</span>MainWindow<span class="operator">::</span>iconActivated);
+
+  <span class="comment">// Main window</span>
+  setWindowTitle(tr(<span class="string">&quot;SysTray&quot;</span>));
+  <span class="type">QPushButton</span> <span class="operator">*</span>browseButton <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QPushButton</span>(tr(<span class="string">&quot;&amp;Browse...&quot;</span>)<span class="operator">,</span> <span class="keyword">this</span>);
+  connect(browseButton<span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QAbstractButton</span><span class="operator">::</span>clicked<span class="operator">,</span> <span class="keyword">this</span><span class="operator">,</span> <span class="operator">&amp;</span>MainWindow<span class="operator">::</span>browse);
+  <span class="type">QPushButton</span> <span class="operator">*</span>launchSchedulerButton <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QPushButton</span>(tr(<span class="string">&quot;&amp;Launch scheduler&quot;</span>)<span class="operator">,</span> <span class="keyword">this</span>);
+  connect(launchSchedulerButton<span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QAbstractButton</span><span class="operator">::</span>clicked<span class="operator">,</span> <span class="keyword">this</span><span class="operator">,</span> <span class="operator">&amp;</span>MainWindow<span class="operator">::</span>launchScheduler);
+
+  msgComboBox <span class="operator">=</span> createComboBox(tr(<span class="string">&quot;Message one&quot;</span>));
+  fileComboBox <span class="operator">=</span> createComboBox(tr(<span class="string">&quot;EXAMPLE.txt&quot;</span>));
+  directoryComboBox <span class="operator">=</span> createComboBox(<span class="type">QDir</span><span class="operator">::</span>toNativeSeparators(<span class="type">QDir</span><span class="operator">::</span>currentPath()));
+
+  filesFoundLabel <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QLabel</span>;
+
+  <span class="type">QGridLayout</span> <span class="operator">*</span>mainLayout <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QGridLayout</span>(<span class="keyword">this</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(<span class="keyword">new</span> <span class="type">QLabel</span>(tr(<span class="string">&quot;Named msg:&quot;</span>))<span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="number">0</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(msgComboBox<span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">4</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(<span class="keyword">new</span> <span class="type">QLabel</span>(tr(<span class="string">&quot;Named file:&quot;</span>))<span class="operator">,</span> <span class="number">4</span><span class="operator">,</span> <span class="number">0</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(fileComboBox<span class="operator">,</span> <span class="number">4</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">4</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(<span class="keyword">new</span> <span class="type">QLabel</span>(tr(<span class="string">&quot;In directory:&quot;</span>))<span class="operator">,</span> <span class="number">6</span><span class="operator">,</span> <span class="number">0</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(directoryComboBox<span class="operator">,</span> <span class="number">6</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">4</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(filesFoundLabel<span class="operator">,</span> <span class="number">8</span><span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">4</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(browseButton<span class="operator">,</span> <span class="number">8</span><span class="operator">,</span> <span class="number">4</span>);
+  mainLayout<span class="operator">-</span><span class="operator">&gt;</span>addWidget(launchSchedulerButton<span class="operator">,</span> <span class="number">10</span><span class="operator">,</span> <span class="number">2</span>);
+}</pre>
+<p>where the following functions are called:</p>
+<pre class="cpp"><span class="type">void</span> MainWindow<span class="operator">::</span>launchScheduler()
+{
+    qDebug() <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot;Timer&quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot; Status&quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot;Interval&quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot;Remaining time&quot;</span>;
+    qDebug() <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot;Timer 1 &quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> timer1<span class="operator">-</span><span class="operator">&gt;</span>isActive() <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot; &quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> timer1<span class="operator">-</span><span class="operator">&gt;</span>interval() <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot; &quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> timer1<span class="operator">-</span><span class="operator">&gt;</span>remainingTime();
+    qDebug() <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot;Timer 2 &quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> timer2<span class="operator">-</span><span class="operator">&gt;</span>isActive() <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot; &quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> timer2<span class="operator">-</span><span class="operator">&gt;</span>interval() <span class="operator">&lt;</span><span class="operator">&lt;</span> <span class="string">&quot; &quot;</span> <span class="operator">&lt;</span><span class="operator">&lt;</span> timer2<span class="operator">-</span><span class="operator">&gt;</span>remainingTime();
+
+    <span class="keyword">if</span>(<span class="operator">!</span>timer1<span class="operator">-</span><span class="operator">&gt;</span>isActive())
+    {
+        timer1 <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QTimer</span>(<span class="keyword">this</span>);
+        connect(timer1<span class="operator">,</span><span class="operator">&amp;</span><span class="type">QTimer</span><span class="operator">::</span>timeout<span class="operator">,</span><span class="keyword">this</span><span class="operator">,</span><span class="operator">&amp;</span>MainWindow<span class="operator">::</span>showMessage);
+        timer1<span class="operator">-</span><span class="operator">&gt;</span>start(<span class="number">10000</span>);
+    }
+    <span class="keyword">if</span>(<span class="operator">!</span>timer2<span class="operator">-</span><span class="operator">&gt;</span>isActive())
+    {
+        timer2 <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QTimer</span>(<span class="keyword">this</span>);
+        connect(timer2<span class="operator">,</span><span class="operator">&amp;</span><span class="type">QTimer</span><span class="operator">::</span>timeout<span class="operator">,</span><span class="keyword">this</span><span class="operator">,</span><span class="operator">&amp;</span>MainWindow<span class="operator">::</span>find);
+        timer2<span class="operator">-</span><span class="operator">&gt;</span>start(<span class="number">30000</span>);
+    }
+
+}
+
+<span class="type">QMenu</span><span class="operator">*</span> MainWindow<span class="operator">::</span>createMenu()
+{
+  <span class="keyword">auto</span> stopTask1 <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QAction</span>(tr(<span class="string">&quot;&amp;Stop task1&quot;</span>)<span class="operator">,</span> <span class="keyword">this</span>);
+  connect(stopTask1<span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QAction</span><span class="operator">::</span>triggered<span class="operator">,</span> <span class="keyword">this</span><span class="operator">,</span> <span class="operator">&amp;</span>MainWindow<span class="operator">::</span>stopTimer1);
+
+  <span class="keyword">auto</span> stopTask2 <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QAction</span>(tr(<span class="string">&quot;&amp;Stop task2&quot;</span>)<span class="operator">,</span> <span class="keyword">this</span>);
+  connect(stopTask2<span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QAction</span><span class="operator">::</span>triggered<span class="operator">,</span> <span class="keyword">this</span><span class="operator">,</span> <span class="operator">&amp;</span>MainWindow<span class="operator">::</span>stopTimer2);
+
+  <span class="keyword">auto</span> showPanel <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QAction</span>(tr(<span class="string">&quot;&amp;Open control panel&quot;</span>)<span class="operator">,</span> <span class="keyword">this</span>);
+  connect(showPanel<span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QAction</span><span class="operator">::</span>triggered<span class="operator">,</span> <span class="keyword">this</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QWidget</span><span class="operator">::</span>showNormal);
+
+  <span class="keyword">auto</span> quitAction <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QAction</span>(<span class="string">&quot;&amp;Quit&quot;</span><span class="operator">,</span> <span class="keyword">this</span>);
+  connect(quitAction<span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QAction</span><span class="operator">::</span>triggered<span class="operator">,</span> qApp<span class="operator">,</span> <span class="operator">&amp;</span><span class="type">QCoreApplication</span><span class="operator">::</span>quit);
+
+  <span class="keyword">auto</span> menu <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QMenu</span>(<span class="keyword">this</span>);
+  menu<span class="operator">-</span><span class="operator">&gt;</span>addAction(showPanel);
+  menu<span class="operator">-</span><span class="operator">&gt;</span>addAction(stopTask1);
+  menu<span class="operator">-</span><span class="operator">&gt;</span>addAction(stopTask2);
+  menu<span class="operator">-</span><span class="operator">&gt;</span>addSeparator();
+  menu<span class="operator">-</span><span class="operator">&gt;</span>addAction(quitAction);
+
+  <span class="keyword">return</span> menu;
+}
+
+<span class="type">void</span> MainWindow<span class="operator">::</span>iconActivated(<span class="type">QSystemTrayIcon</span><span class="operator">::</span>ActivationReason reason_)
+{
+  <span class="keyword">switch</span> (reason_) {
+  <span class="keyword">case</span> <span class="type">QSystemTrayIcon</span><span class="operator">::</span>Trigger:
+    <span class="keyword">this</span><span class="operator">-</span><span class="operator">&gt;</span>trayIcon<span class="operator">-</span><span class="operator">&gt;</span>showMessage(<span class="string">&quot;Hello&quot;</span><span class="operator">,</span> <span class="string">&quot;Click right mouse button and choose action&quot;</span>);
+    <span class="keyword">break</span>;
+  <span class="keyword">default</span>:
+    ;
+  }
+}
+
+<span class="type">QComboBox</span> <span class="operator">*</span>MainWindow<span class="operator">::</span>createComboBox(<span class="keyword">const</span> <span class="type">QString</span> <span class="operator">&amp;</span>text)
+{
+    <span class="type">QComboBox</span> <span class="operator">*</span>comboBox <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QComboBox</span>;
+    comboBox<span class="operator">-</span><span class="operator">&gt;</span>setEditable(<span class="keyword">true</span>);
+    comboBox<span class="operator">-</span><span class="operator">&gt;</span>addItem(text);
+    comboBox<span class="operator">-</span><span class="operator">&gt;</span>setSizePolicy(<span class="type">QSizePolicy</span><span class="operator">::</span>Expanding<span class="operator">,</span> <span class="type">QSizePolicy</span><span class="operator">::</span>Preferred);
+    <span class="keyword">return</span> comboBox;
+}
+
+<span class="keyword">static</span> <span class="type">void</span> updateComboBox(<span class="type">QComboBox</span> <span class="operator">*</span>comboBox)
+{
+    <span class="keyword">if</span> (comboBox<span class="operator">-</span><span class="operator">&gt;</span>findText(comboBox<span class="operator">-</span><span class="operator">&gt;</span>currentText()) <span class="operator">=</span><span class="operator">=</span> <span class="operator">-</span><span class="number">1</span>)
+        comboBox<span class="operator">-</span><span class="operator">&gt;</span>addItem(comboBox<span class="operator">-</span><span class="operator">&gt;</span>currentText());
+}</pre>
+<p>- The implementiation section of task1 is here reported:</p>
+<pre class="cpp"><span class="type">void</span> MainWindow<span class="operator">::</span>showMessage()
+{
+    <span class="type">QString</span> msgName <span class="operator">=</span> msgComboBox<span class="operator">-</span><span class="operator">&gt;</span>currentText();
+    updateComboBox(msgComboBox);
+    <span class="keyword">auto</span> titleEdit <span class="operator">=</span> <span class="keyword">new</span> <span class="type">QLineEdit</span>(tr(<span class="string">&quot;Message&quot;</span>));
+    <span class="keyword">auto</span> appIcon <span class="operator">=</span> <span class="type">QIcon</span>(<span class="string">&quot;:/icons/message.png&quot;</span>);
+
+    trayIcon<span class="operator">-</span><span class="operator">&gt;</span>showMessage(titleEdit<span class="operator">-</span><span class="operator">&gt;</span>text()<span class="operator">,</span> msgName<span class="operator">,</span> appIcon<span class="operator">,</span> <span class="number">500</span>);
+    qDebug() <span class="operator">&lt;</span><span class="operator">&lt;</span> msgName;
+}</pre>
+<p>- The implementiation section of task2 is here reported:</p>
+<pre class="cpp"><span class="type">void</span> MainWindow<span class="operator">::</span>browse()
+{
+    <span class="type">QString</span> directory <span class="operator">=</span>
+        <span class="type">QDir</span><span class="operator">::</span>toNativeSeparators(<span class="type">QFileDialog</span><span class="operator">::</span>getExistingDirectory(<span class="keyword">this</span><span class="operator">,</span> tr(<span class="string">&quot;Find Files&quot;</span>)<span class="operator">,</span> <span class="type">QDir</span><span class="operator">::</span>currentPath()));
+
+    <span class="keyword">if</span> (<span class="operator">!</span>directory<span class="operator">.</span>isEmpty()) {
+        <span class="keyword">if</span> (directoryComboBox<span class="operator">-</span><span class="operator">&gt;</span>findText(directory) <span class="operator">=</span><span class="operator">=</span> <span class="operator">-</span><span class="number">1</span>)
+            directoryComboBox<span class="operator">-</span><span class="operator">&gt;</span>addItem(directory);
+        directoryComboBox<span class="operator">-</span><span class="operator">&gt;</span>setCurrentIndex(directoryComboBox<span class="operator">-</span><span class="operator">&gt;</span>findText(directory));
+    }
+}
+
+<span class="type">void</span> MainWindow<span class="operator">::</span>find()
+{
+    <span class="type">QString</span> fileName <span class="operator">=</span> fileComboBox<span class="operator">-</span><span class="operator">&gt;</span>currentText();
+    <span class="type">QString</span> path <span class="operator">=</span> <span class="type">QDir</span><span class="operator">::</span>cleanPath(directoryComboBox<span class="operator">-</span><span class="operator">&gt;</span>currentText());
+    currentDir <span class="operator">=</span> <span class="type">QDir</span>(path);
+
+    updateComboBox(fileComboBox);
+    updateComboBox(directoryComboBox);
+
+    <span class="type">QStringList</span> filter;
+    <span class="keyword">if</span> (<span class="operator">!</span>fileName<span class="operator">.</span>isEmpty())
+        filter <span class="operator">&lt;</span><span class="operator">&lt;</span> fileName;
+    <span class="type">QDirIterator</span> it(path<span class="operator">,</span> filter<span class="operator">,</span> <span class="type">QDir</span><span class="operator">::</span>AllEntries <span class="operator">|</span> <span class="type">QDir</span><span class="operator">::</span>NoSymLinks <span class="operator">|</span> <span class="type">QDir</span><span class="operator">::</span>NoDotAndDotDot<span class="operator">,</span> <span class="type">QDirIterator</span><span class="operator">::</span>Subdirectories);
+    <span class="type">QStringList</span> files;
+    <span class="keyword">while</span> (it<span class="operator">.</span>hasNext())
+        files <span class="operator">&lt;</span><span class="operator">&lt;</span> it<span class="operator">.</span>next();
+    files<span class="operator">.</span>sort();
+    showFiles(files);
+}
+
+<span class="type">void</span> MainWindow<span class="operator">::</span>showFiles(<span class="keyword">const</span> <span class="type">QStringList</span> <span class="operator">&amp;</span>paths)
+{
+    <span class="type">QString</span> dbgMsg(<span class="string">&quot;File not found&quot;</span>);
+
+    <span class="keyword">if</span>(<span class="operator">!</span>paths<span class="operator">.</span>size())
+    {
+        qDebug() <span class="operator">&lt;</span><span class="operator">&lt;</span> dbgMsg;
+        <span class="type">QMessageBox</span><span class="operator">::</span>warning(<span class="keyword">this</span><span class="operator">,</span> tr(<span class="string">&quot;Systray: Debug message&quot;</span>)<span class="operator">,</span>dbgMsg);
+    }
+
+    filesFoundLabel<span class="operator">-</span><span class="operator">&gt;</span>setText(tr(<span class="string">&quot;%n file(s) found&quot;</span><span class="operator">,</span> nullptr<span class="operator">,</span> paths<span class="operator">.</span>size()));
+    filesFoundLabel<span class="operator">-</span><span class="operator">&gt;</span>setWordWrap(<span class="keyword">true</span>);
+
+}</pre>
+<p class="centerAlign"><img src="images/systemtray-exec.png" alt="" /></p><p class="figCaption">Task Scheduler example with both task1 and task2 running</p>
+<p>QWidget's <i>closeEvent()</i> function is able to inform the user (when closing the editor window) that the program will keep running in the system tray until the user chooses the <b>Quit</b> entry in the icon's context menu. Than the timers will be stopped.</p>
+<pre class="cpp"><span class="type">void</span> MainWindow<span class="operator">::</span>stopTimer1()
+{
+    timer1<span class="operator">-</span><span class="operator">&gt;</span>stop();
+}
+
+<span class="type">void</span> MainWindow<span class="operator">::</span>stopTimer2()
+{
+    timer2<span class="operator">-</span><span class="operator">&gt;</span>stop();
+}
+
+<span class="type">void</span> MainWindow<span class="operator">::</span>closeEvent(<span class="type">QCloseEvent</span> <span class="operator">*</span>event)
+{
+<span class="preprocessor">#ifdef Q_OS_OSX</span>
+    <span class="keyword">if</span> (<span class="operator">!</span>event<span class="operator">-</span><span class="operator">&gt;</span>spontaneous() <span class="operator">|</span><span class="operator">|</span> <span class="operator">!</span>isVisible()) {
+        <span class="keyword">return</span>;
+    }
+<span class="preprocessor">#endif</span>
+    <span class="keyword">if</span> (trayIcon<span class="operator">-</span><span class="operator">&gt;</span>isVisible()) {
+        <span class="type">QMessageBox</span><span class="operator">::</span>critical(<span class="keyword">this</span><span class="operator">,</span> tr(<span class="string">&quot;Systray: Request to close tasks&quot;</span>)<span class="operator">,</span>
+                                 tr(<span class="string">&quot;The Systray app will keep running in the &quot;</span>
+                                    <span class="string">&quot;system tray. To terminate the program, &quot;</span>
+                                    <span class="string">&quot;choose &lt;b&gt;Quit&lt;/b&gt; in the context menu &quot;</span>
+                                    <span class="string">&quot;of the system tray entry.&quot;</span>));
+        hide();
+        event<span class="operator">-</span><span class="operator">&gt;</span>ignore();
+        <span class="keyword">if</span>(timer1<span class="operator">-</span><span class="operator">&gt;</span>isActive()) <span class="keyword">this</span><span class="operator">-</span><span class="operator">&gt;</span>stopTimer1();
+        <span class="keyword">if</span>(timer2<span class="operator">-</span><span class="operator">&gt;</span>isActive()) <span class="keyword">this</span><span class="operator">-</span><span class="operator">&gt;</span>stopTimer2();
+    }
+}</pre>
+<p>Files:</p>
+<ul>
+<li><a href="qdoc-project-main-cpp.html">main.cpp</a></li>
+<li><a href="qdoc-project-mainwindow-cpp.html">mainwindow.cpp</a></li>
+<li><a href="qdoc-project-mainwindow-h.html">mainwindow.h</a></li>
+<li><a href="qdoc-project-systray-pro.html">SysTray.pro</a></li>
+<li><a href="qdoc-project-resources-qrc.html">resources.qrc</a></li>
+</ul>
+</div>
+<!-- @@@ -->
+</body>
+</html>

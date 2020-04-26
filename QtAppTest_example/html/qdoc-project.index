@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE QDOCINDEX>
+<INDEX url="" title="Sample QDoc project" version="" project="QDoc Project">
+    <namespace threadsafety="unspecified" name="" status="active" access="public" module="qdoc project">
+        <group name="qt-example" href="qt-example.html" status="internal" seen="false" title="" members=""/>
+    </namespace>
+</INDEX>

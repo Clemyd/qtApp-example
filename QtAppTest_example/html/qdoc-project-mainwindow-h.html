@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>mainwindow.h Example File | QDoc Project</title>
+</head>
+<body>
+<li><a href="qdoc-project-mainwindow-h.html">Task Scheduler example</a></li>
+<li>mainwindow.h Example File</li>
+<div class="sidebar"><div class="sidebar-content" id="sidebar-content"></div></div>
+<h1 class="title">mainwindow.h Example File</h1>
+<span class="subtitle"></span>
+<!-- $$$mainwindow.h-description -->
+<div class="descr"> <a name="details"></a>
+<pre class="cpp"><span class="preprocessor">#include &lt;QMainWindow&gt;</span>
+<span class="preprocessor">#include &lt;QSystemTrayIcon&gt;</span>
+<span class="preprocessor">#include &lt;QMenu&gt;</span>
+<span class="preprocessor">#include &lt;QDir&gt;</span>
+
+<span class="keyword">class</span> <span class="type">QComboBox</span>;
+<span class="keyword">class</span> <span class="type">QLabel</span>;
+<span class="keyword">class</span> <span class="type">QPushButton</span>;
+<span class="keyword">class</span> <span class="type">QTableWidget</span>;
+<span class="keyword">class</span> <span class="type">QTableWidgetItem</span>;
+
+<span class="keyword">class</span> MainWindow : <span class="keyword">public</span> <span class="type">QWidget</span>
+{
+  Q_OBJECT
+
+<span class="keyword">public</span>:
+  MainWindow(<span class="type">QWidget</span> <span class="operator">*</span>parent <span class="operator">=</span> <span class="number">0</span>);
+  <span class="operator">~</span>MainWindow();
+
+<span class="keyword">protected</span>:
+  <span class="type">void</span> closeEvent(<span class="type">QCloseEvent</span> <span class="operator">*</span>event) override;
+
+<span class="keyword">public</span> <span class="keyword">slots</span>:
+  <span class="type">void</span> launchScheduler();
+
+<span class="keyword">private</span> <span class="keyword">slots</span>:
+  <span class="type">void</span> iconActivated(<span class="type">QSystemTrayIcon</span><span class="operator">::</span>ActivationReason);
+  <span class="type">void</span> showMessage();
+  <span class="type">void</span> browse();
+  <span class="type">void</span> find();
+
+<span class="keyword">private</span>:
+  <span class="type">void</span> showFiles(<span class="keyword">const</span> <span class="type">QStringList</span> <span class="operator">&amp;</span>paths);
+  <span class="type">QComboBox</span> <span class="operator">*</span>createComboBox(<span class="keyword">const</span> <span class="type">QString</span> <span class="operator">&amp;</span>text <span class="operator">=</span> <span class="type">QString</span>());
+  <span class="type">void</span> stopTimer1();
+  <span class="type">void</span> stopTimer2();
+
+  <span class="type">QTimer</span> <span class="operator">*</span>timer1;
+  <span class="type">QTimer</span> <span class="operator">*</span>timer2;
+  <span class="type">QSystemTrayIcon</span><span class="operator">*</span> trayIcon;
+  <span class="type">QMenu</span><span class="operator">*</span> trayIconMenu;
+
+  <span class="type">QMenu</span><span class="operator">*</span> createMenu();
+
+  <span class="type">QComboBox</span> <span class="operator">*</span>msgComboBox;
+  <span class="type">QComboBox</span> <span class="operator">*</span>fileComboBox;
+  <span class="type">QComboBox</span> <span class="operator">*</span>directoryComboBox;
+  <span class="type">QLabel</span> <span class="operator">*</span>filesFoundLabel;
+
+  <span class="type">QDir</span> currentDir;
+};</pre>
+</div>
+<!-- @@@mainwindow.h -->
+</body>
+</html>

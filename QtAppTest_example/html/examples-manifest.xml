@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instructionals module="QDoc Project">
+    <examples>
+        <example name="Task Scheduler example" docUrl="qthelp:////qdoc-project-example.html" projectPath="SysTray.pro" imageUrl="qthelp:////images/systemtray-example.png">
+            <description><![CDATA[No description available]]></description>
+            <tags>project,qdoc,scheduler,task</tags>
+            <fileToOpen mainFile="true">main.cpp</fileToOpen>
+        </example>
+    </examples>
+</instructionals>

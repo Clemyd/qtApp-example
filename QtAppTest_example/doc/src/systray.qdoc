@@ -1,0 +1,66 @@
+/****************************************************************************
+** Test example
+****************************************************************************/
+
+/*! \example 
+    \title Task Scheduler example
+    \ingroup qt-example
+    \caption The application executes two task in series. The first task shows a message every 10 seconds 
+    and the second task checks every 30 seconds if a file exists or not; if not, then the application shows a warning
+    message.
+		
+    \image systemtray-example.png
+    \caption Screenshot of the Systray icon displayed
+	
+    The single class \c MainWindow allows the configuration of task1 and task2.
+    The \uicontrol{Named msg} field is the message that task1 periodically shows. 
+    The \uicontrol{Named file} field is the file that task2 will search. The \uicontrol{Browse} button
+    allows the user to specify the folder where to search for the file.
+    The \uicontrol{Launch scheduler} button allows to start both task1 and task2 with their scheduled timing.    
+    \image systemtray-editor.png
+    \caption Screenshot of the Systray control panel
+
+    It is possible to stop both tasks closing the panel; the main application continues to run in hide mode.
+	An information message about this is displayed.
+    \image systemtray-stop-tasks.png
+	
+    The \uicontrol{Open control panel} action restores the Panel control.
+    The user can choose other actions through the systray icon menu.
+	So, it is possible to stop task1 or task2 through the relative \uicontrol{Stop task1} and \uicontrol{Stop task2}
+    actions. 
+    The \uicontrol{Quit} action allows to close the application.
+    \image systemtray-menu.png
+
+    \section1 Window Class Definition
+
+    The \c MainWindow class inherits QWidget:
+
+    \snippet mainwindow.h 0
+
+    Several private slots are implented to respond to user
+    interaction through the menu of the systray and the control panel buttons. 
+	Furthermore timer1 and timer2 allow to execute the two tasks periodically.
+
+    \section1 Window Class Implementation
+    - The main application section is here reported:
+    \snippet mainwindow.cpp 0
+
+    where the following functions are called:
+    \snippet mainwindow.cpp 1
+
+    - The implementiation section of task1 is here reported:
+    \snippet mainwindow.cpp 2
+
+    - The implementiation section of task2 is here reported:
+    \snippet mainwindow.cpp 3
+
+    \image systemtray-exec.png
+    \caption Task Scheduler example with both task1 and task2 running
+
+    QWidget's \e{closeEvent()} function is able to inform the user (when closing the editor
+    window) that the program will keep running in the system tray
+    until the user chooses the \uicontrol Quit entry in the icon's context
+    menu. Than the timers will be stopped.
+    \snippet mainwindow.cpp 4
+
+*/
